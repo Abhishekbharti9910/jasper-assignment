@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import Header from '../components/Header';
 import { 
   CartItem, 
@@ -19,7 +18,6 @@ import {
 import { Product } from '@/types/product';
 
 export default function CartPage() {
-  const router = useRouter();
 const [cartItems, setCartItems] = useState<CartItem[]>([]);
 const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
