@@ -17,21 +17,6 @@ A beautifully designed, full-featured e-commerce platform built with **Next.js A
 
 ---
 
-## 🗂 Project Structure
-
-app/
-│
-├── page.tsx # Home page (products, filters)
-├── cart/page.tsx # Cart page
-├── checkout/page.tsx # Checkout flow
-├── components/
-│ ├── Header.tsx
-│ ├── ProductCard.tsx
-│ ├── ProductSkeleton.tsx
-│ └── ThemeToggle.tsx
-└── utils/
-└── cart-utils.ts # Cart/Wishlist localStorage functions
-
 ## 🧩 Tech Stack
 
 - [Next.js App Router](https://nextjs.org/docs/app)
@@ -40,3 +25,7 @@ app/
 - [Tailwind CSS](https://tailwindcss.com/)
 - [Framer Motion](https://www.framer.com/motion/)
 - [localStorage API](https://developer.mozilla.org/en-US/docs/Web/API/Window/localStorage)
+
+  ---
+
+
