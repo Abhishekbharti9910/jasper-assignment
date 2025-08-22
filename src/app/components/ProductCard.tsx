@@ -401,7 +401,9 @@ export default function ProductCard({
         {/* Enhanced Action Buttons */}
         <div className="space-y-3 pt-2">
           {/* Enhanced View More Button */}
-          <motion.button
+          {
+        product.inStock && (
+             <motion.button
             whileHover={{ 
               scale: 1.02,
               boxShadow: "0 10px 25px rgba(59, 130, 246, 0.3)",
@@ -416,7 +418,7 @@ export default function ProductCard({
               whileHover={{ x: 5 }}
               className="flex items-center justify-center space-x-2"
             >
-              <span>View Details</span>
+              <span>Buy Now</span>
               <motion.svg 
                 whileHover={{ x: 3, scale: 1.1 }}
                 transition={{ duration: 0.2 }}
@@ -429,6 +431,9 @@ export default function ProductCard({
               </motion.svg>
             </motion.div>
           </motion.button>
+        )
+          }
+         
 
           {/* Enhanced Add to Cart Button */}
           <motion.button

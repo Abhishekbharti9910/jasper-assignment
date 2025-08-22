@@ -2,10 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import ProductCard from './components/ProductCard';
 import ProductCardSkeleton from './components/ProductSkeleton';
-import ThemeToggle from './components/ThemeToggle';
+import Header from './components/Header';
 import { Product } from './api/products/route';
+import { 
+  addToCart, 
+  toggleWishlist, 
+  getCartItems, 
+  getWishlistItems, 
+  getCartItemsCount, 
+  CartItem
+}  from '@/app/utils/card-utils';
+
 interface ApiResponse {
   success: boolean;
   data: Product[];
@@ -21,18 +31,26 @@ interface FilterState {
 }
 
 export default function Home() {
+  const router = useRouter();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [cartItems, setCartItems] = useState<Product[]>([]);
-  const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
-  const [notification, setNotification] = useState<string>('');
+const [cartItems, setCartItems] = useState<CartItem[]>([]);
+const [wishlistItems, setWishlistItems] = useState<Product[]>([]);
+
+  const [notification, setNotification] = useState('');
   const [filters, setFilters] = useState<FilterState>({
     category: 'all',
     inStock: false,
     sort: '',
     search: ''
   });
+
+  // Load cart and wishlist from localStorage on component mount
+  useEffect(() => {
+    setCartItems(getCartItems());
+    setWishlistItems(getWishlistItems());
+  }, []);
 
   const fetchProducts = async () => {
     try {
@@ -89,25 +107,28 @@ export default function Home() {
   }, [filters.search]);
 
   const handleAddToCart = (product: Product) => {
-    setCartItems(prev => [...prev, product]);
+    const updatedCart = addToCart(product);
+    setCartItems(updatedCart);
     showNotification(`${product.title} added to cart!`, 'success');
   };
 
   const handleAddToWishlist = (product: Product) => {
-    setWishlistItems(prev => {
-      const exists = prev.find(item => item.id === product.id);
-      if (exists) {
-        showNotification(`${product.title} removed from wishlist!`, 'info');
-        return prev.filter(item => item.id !== product.id);
-      } else {
-        showNotification(`${product.title} added to wishlist!`, 'success');
-        return [...prev, product];
-      }
-    });
+    const { items: updatedWishlist, isAdded } = toggleWishlist(product);
+    setWishlistItems(updatedWishlist);
+    
+    if (isAdded) {
+      showNotification(`${product.title} added to wishlist!`, 'success');
+    } else {
+      showNotification(`${product.title} removed from wishlist!`, 'info');
+    }
   };
 
   const handleViewMore = (product: Product) => {
-    showNotification(`Opening details for ${product.title}`, 'info');
+    // In a real application, this would navigate to a product detail page
+    // For now, we'll redirect to checkout with the product added to cart
+    const updatedCart = addToCart(product);
+    setCartItems(updatedCart);
+    router.push('/checkout');
   };
 
   const showNotification = (message: string, type: 'success' | 'error' | 'info') => {
@@ -143,62 +164,10 @@ export default function Home() {
       </div>
 
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-white/20 dark:border-gray-700/50 shadow-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Premium Store
-              </h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                Discover amazing products
-              </p>
-            </motion.div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Cart Counter */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="relative"
-              >
-                <div className="w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m-.4-1H3m4 14a2 2 0 004 0m-4 0a2 2 0 00-4 0m10 0a2 2 0 004 0m-4 0a2 2 0 00-4 0" />
-                  </svg>
-                </div>
-                {cartItems.length > 0 && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {cartItems.length}
-                  </div>
-                )}
-              </motion.div>
-
-              {/* Wishlist Counter */}
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="relative"
-              >
-                <div className="w-10 h-10 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg">
-                  <svg className="w-5 h-5 text-gray-700 dark:text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                </div>
-                {wishlistItems.length > 0 && (
-                  <div className="absolute -top-2 -right-2 w-6 h-6 bg-pink-500 text-white text-xs font-bold rounded-full flex items-center justify-center">
-                    {wishlistItems.length}
-                  </div>
-                )}
-              </motion.div>
-              
-              <ThemeToggle />
-            </div>
-          </div>
-        </div>
-      </header>
+      <Header 
+        cartItemsCount={getCartItemsCount(cartItems)} 
+        wishlistItemsCount={wishlistItems.length} 
+      />
 
       {/* Filters Section */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -390,86 +359,6 @@ export default function Home() {
               )}
             </AnimatePresence>
           </motion.div>
-
-          {/* Shopping Summary */}
-          <AnimatePresence>
-            {(cartItems.length > 0 || wishlistItems.length > 0) && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -20 }}
-                className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-xl rounded-2xl shadow-xl border border-white/20 dark:border-gray-700/50 p-6"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Cart Items */}
-                  {cartItems.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                        <svg className="w-6 h-6 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4m-.4-1H3m4 14a2 2 0 004 0m-4 0a2 2 0 00-4 0m10 0a2 2 0 004 0m-4 0a2 2 0 00-4 0" />
-                        </svg>
-                        Cart ({cartItems.length} items)
-                      </h3>
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {cartItems.map((item, index) => (
-                          <div key={`cart-${item.id}-${index}`} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                            <div className="w-12 h-12 relative rounded-lg overflow-hidden">
-                              <img
-                                src={item.image}
-                                alt={item.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {item.title}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {item.price}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Wishlist Items */}
-                  {wishlistItems.length > 0 && (
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center">
-                        <svg className="w-6 h-6 mr-2 text-pink-500" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                        </svg>
-                        Wishlist ({wishlistItems.length} items)
-                      </h3>
-                      <div className="space-y-3 max-h-60 overflow-y-auto">
-                        {wishlistItems.map((item) => (
-                          <div key={`wishlist-${item.id}`} className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                            <div className="w-12 h-12 relative rounded-lg overflow-hidden">
-                              <img
-                                src={item.image}
-                                alt={item.title}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                                {item.title}
-                              </p>
-                              <p className="text-sm text-gray-500 dark:text-gray-400">
-                                {item.price}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
         </main>
       </div>
 
